@@ -1,0 +1,142 @@
+--// Orion Lib laden
+local OrionLib = loadstring(game:HttpGet('https://raw.githubusercontent.com/1nig1htmare1234/SCRIPTS/refs/heads/main/Orion.lua'))()
+
+--// Fenster erstellen mit IntroText
+local Window = OrionLib:MakeWindow({
+    Name = "SentricxHub | BrookhavenRP <Beta>",        -- GUI-Name
+    HidePremium = false,
+    SaveConfig = false,
+    IntroText = "SentricxHub | BrookhavenRP <Beta>"   -- Splash-Text beim Laden
+})
+
+--// Infos Tab
+local InfoTab = Window:MakeTab({
+    Name = "Infos",
+    Icon = "rbxassetid://4483345998",
+    PremiumOnly = false
+})
+
+InfoTab:AddLabel("This is a Brookhaven script, with just some features!")
+InfoTab:AddLabel("Suggest some things so we can update it!")
+
+--// Main Tab
+local MainTab = Window:MakeTab({
+    Name = "Main",
+    Icon = "rbxassetid://4483345998",
+    PremiumOnly = false
+})
+
+--// Sections
+local MovementSection = MainTab:AddSection({Name = "Movement"})
+local OtherSection = MainTab:AddSection({Name = "Other"})
+
+--// Lokale Variablen
+local Player = game.Players.LocalPlayer
+local Character = Player.Character or Player.CharacterAdded:Wait()
+local Humanoid = Character:WaitForChild("Humanoid")
+local flying = false
+local flySpeed = 100
+local infiniteJumpEnabled = false
+
+--// Movement Section
+MovementSection:AddSlider({
+    Name = "WalkSpeed",
+    Min = 16,
+    Max = 200,
+    Default = 16,
+    Color = Color3.fromRGB(255,255,255),
+    Increment = 1,
+    ValueName = "Speed",
+    Callback = function(Value)
+        Humanoid.WalkSpeed = Value
+    end
+})
+
+MovementSection:AddSlider({
+    Name = "JumpPower",
+    Min = 50,
+    Max = 1000,
+    Default = 50,
+    Color = Color3.fromRGB(255,255,255),
+    Increment = 1,
+    ValueName = "Jump",
+    Callback = function(Value)
+        Humanoid.JumpPower = Value
+    end
+})
+
+MovementSection:AddToggle({
+    Name = "Infinite Jump",
+    Default = false,
+    Callback = function(Value)
+        infiniteJumpEnabled = Value
+    end
+})
+
+-- Infinite Jump Implementation
+game:GetService("UserInputService").JumpRequest:Connect(function()
+    if infiniteJumpEnabled then
+        Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+    end
+end)
+
+--// Other Section
+OtherSection:AddToggle({
+    Name = "Fly",
+    Default = false,
+    Callback = function(Value)
+        flying = Value
+        if flying then
+            local char = Player.Character
+            local hrp = char:WaitForChild("HumanoidRootPart")
+
+            local bg = Instance.new("BodyGyro")
+            bg.P = 9e4
+            bg.Parent = hrp
+            bg.MaxTorque = Vector3.new(9e9,9e9,9e9)
+
+            local bv = Instance.new("BodyVelocity")
+            bv.Parent = hrp
+            bv.MaxForce = Vector3.new(9e9,9e9,9e9)
+
+            local uis = game:GetService("UserInputService")
+
+            spawn(function()
+                while flying and hrp and hrp.Parent do
+                    task.wait()
+                    bg.CFrame = workspace.CurrentCamera.CFrame
+
+                    local moveDir = Vector3.new()
+                    if uis:IsKeyDown(Enum.KeyCode.W) then
+                        moveDir = moveDir + workspace.CurrentCamera.CFrame.LookVector
+                    end
+                    if uis:IsKeyDown(Enum.KeyCode.S) then
+                        moveDir = moveDir - workspace.CurrentCamera.CFrame.LookVector
+                    end
+                    if uis:IsKeyDown(Enum.KeyCode.A) then
+                        moveDir = moveDir - workspace.CurrentCamera.CFrame.RightVector
+                    end
+                    if uis:IsKeyDown(Enum.KeyCode.D) then
+                        moveDir = moveDir + workspace.CurrentCamera.CFrame.RightVector
+                    end
+                    if uis:IsKeyDown(Enum.KeyCode.Space) then
+                        moveDir = moveDir + Vector3.new(0,1,0)
+                    end
+                    if uis:IsKeyDown(Enum.KeyCode.LeftShift) then
+                        moveDir = moveDir - Vector3.new(0,1,0)
+                    end
+
+                    bv.Velocity = moveDir * flySpeed
+                end
+
+                if hrp then
+                    bg:Destroy()
+                    bv:Destroy()
+                end
+            end)
+        end
+    end
+})
+
+--// GUI initialisieren
+OrionLib:Init()
